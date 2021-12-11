@@ -39,8 +39,8 @@ let tokenize (head :: tail) c =
     match head with
     | Empty -> Incomplete(c, Empty) :: tail
     | Incomplete _ when isOpener c -> Incomplete(c, head) :: tail
-    | Incomplete (o, pair) when opposite o = c -> pair :: Valid(o, c) :: tail
-    | Incomplete (o, pair) -> pair :: Invalid(o, c) :: tail
+    | Incomplete (o, token) when opposite o = c -> token :: Valid(o, c) :: tail
+    | Incomplete (o, token) -> token :: Invalid(o, c) :: tail
 
 let day10part1solution =
     data
@@ -53,7 +53,7 @@ let day10part1solution =
 let deTokenize =
     function
     | Empty -> None
-    | Incomplete (c, pair) -> Some (opposite c, pair)
+    | Incomplete (c, token) -> Some (opposite c, token)
 
 let isIncomplete =
     function
