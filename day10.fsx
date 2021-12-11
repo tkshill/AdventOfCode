@@ -22,9 +22,7 @@ let opposite =
     | '{' -> '}'
     | '<' -> '>'
 
-let beginnings = [ '('; '['; '{'; '<' ]
-
-let isOpeners = (=) >> flip Seq.exists beginnings
+let isOpener = (=) >> flip Seq.exists [ '('; '['; '{'; '<' ]
 
 let isInvalid =
     function
@@ -40,7 +38,7 @@ let data = File.ReadAllLines "day10test.txt"
 let tokenize (head :: tail) c =
     match head with
     | Empty -> Incomplete(c, Empty) :: tail
-    | Incomplete _ when isOpeners c -> Incomplete(c, head) :: tail
+    | Incomplete _ when isOpener c -> Incomplete(c, head) :: tail
     | Incomplete (o, pair) when opposite o = c -> pair :: Valid(o, c) :: tail
     | Incomplete (o, pair) -> pair :: Invalid(o, c) :: tail
 
