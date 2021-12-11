@@ -29,7 +29,7 @@ let isInvalid =
     | Invalid _ -> true
     | _ -> false
 
-let pairValue =
+let invalidValue =
     function
     | Invalid (_, c) -> toNum c
 
@@ -46,7 +46,7 @@ let day10part1solution =
     data
     |> Seq.map (Seq.fold tokenize (List.singleton Empty))
     |> Seq.choose (Seq.tryFindBack isInvalid)
-    |> Seq.sumBy pairValue
+    |> Seq.sumBy invalidValue
 
 (*----------------------------------------------------------------*)
 
