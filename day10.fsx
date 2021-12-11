@@ -1,15 +1,14 @@
 open System.IO
-open System
 
 let flip f a b = f b a
 
-type Pair =
+type Token =
     | Empty
-    | Incomplete of char * Pair
-    | ValidComplete of char * char
-    | InvalidComplete of char * char
+    | Incomplete of char * Token
+    | Valid of char * char
+    | Invalid of char * char
 
-let toScore =
+let toNum =
     function
     | ')' -> 3
     | ']' -> 57
@@ -29,61 +28,59 @@ let isOpeners = (=) >> flip Seq.exists beginnings
 
 let isInvalid =
     function
-    | InvalidComplete _ -> true
+    | Invalid _ -> true
     | _ -> false
 
 let pairValue =
     function
-    | InvalidComplete (o, c) -> toScore c
+    | Invalid (_, c) -> toNum c
 
-let data = File.ReadAllLines "day10.txt"
+let data = File.ReadAllLines "day10test.txt"
 
-let folder (head :: tail) c =
+let tokenize (head :: tail) c =
     match head with
     | Empty -> Incomplete(c, Empty) :: tail
     | Incomplete _ when isOpeners c -> Incomplete(c, head) :: tail
-    | Incomplete (o, pair) when opposite o = c -> pair :: ValidComplete(o, c) :: tail
-    | Incomplete (o, pair) -> pair :: InvalidComplete(o, c) :: tail
+    | Incomplete (o, pair) when opposite o = c -> pair :: Valid(o, c) :: tail
+    | Incomplete (o, pair) -> pair :: Invalid(o, c) :: tail
 
 let day10part1solution =
     data
-    |> Seq.map (Seq.fold folder (List.singleton Empty))
-    |> Seq.choose (Seq.tryFindBack (isInvalid))
+    |> Seq.map (Seq.fold tokenize (List.singleton Empty))
+    |> Seq.choose (Seq.tryFindBack isInvalid)
     |> Seq.sumBy pairValue
 
 (*----------------------------------------------------------------*)
 
-let rec folder2 state =
+let deTokenize =
     function
-    | Empty -> Seq.rev state
-    | Incomplete (c, pair) -> folder2 (opposite c :: state) pair
+    | Empty -> None
+    | Incomplete (c, pair) -> Some (opposite c, pair)
 
 let isIncomplete =
     function
     | Incomplete _ -> true
     | _ -> false
 
-let toScore2 =
+let toNum2 =
     function
     | ')' -> 1L
     | ']' -> 2L
     | '}' -> 3L
     | '>' -> 4L
 
+let score s c = s * 5L + c
+
+let middle = Seq.sort >> Seq.splitInto 2 >> Seq.head >> Seq.last
+
 let day10part2solution =
     data
-    |> Seq.map (Seq.fold folder (List.singleton Empty))
+    |> Seq.map (Seq.fold tokenize (List.singleton Empty))
     |> Seq.filter (Seq.forall (not << isInvalid))
-    |> Seq.choose (Seq.tryFindBack (isIncomplete))
-    |> Seq.map (
-        ((folder2 List.Empty) >> (Seq.map toScore2))
-        >> (Seq.fold (fun score c -> score * 5L + c) 0L)
-    )
-    |> Seq.sort
-    |> Seq.splitInto 2
-    |> Seq.head
-    |> Seq.last
+    |> Seq.choose (Seq.tryFindBack isIncomplete)
+    |> Seq.map ((Seq.unfold deTokenize >> Seq.map toNum2) >> Seq.fold score 0L)
+    |> middle
 
-printfn "%A" (day10part1solution, day10part2solution)
+printfn $"{day10part1solution}, {day10part2solution}"
 
 // (294195, 3490802734L)
