@@ -36,7 +36,7 @@ Seq.iter (fun (s1, s2) -> update d s1 s2; update d s2 s1) rawData
 
 let isValidProgression history = function
     | Start -> false
-    | Small c when Seq.exists ((=) (Small c)) history -> false
+    | Small c when Seq.contains (Small c) history -> false
     | _ -> true
  
 let rec recurser1 (d:CaveMap) history key =
@@ -59,12 +59,12 @@ let isValidProgression2 repeatAllowed history = function
     | Start -> false
     | Big _ -> true
     | End -> true
-    | c when Seq.forall (not << ((=) c)) history -> true
+    | c when not (Seq.contains c history) -> true
     | _ when repeatAllowed -> true
     | _ -> false
     
 let updateRepeatAllowed key history repeatAllowed =
-    if small key && Seq.exists ((=) key) history then false
+    if small key && Seq.contains key history then false
     else repeatAllowed
     
 let rec recurser2 (d:CaveMap) repeatAllowed history key =
