@@ -7,26 +7,22 @@ let charsToString = Seq.map string >> String.concat ""
 let leftmost, rightmost = Seq.head initialValue, Seq.last initialValue
 
 let grouped =
-        toPairs initialValue
-        |> Seq.countBy id
-        |> Seq.map (fun (s, n) -> s, int64 n)
-        
-let changes =
-    let stringToMapping (s:string) =
-        s.Split " -> "
-        |> (fun s -> s[0], char s[1])
+    toPairs initialValue
+    |> Seq.countBy id
+    |> Seq.map (fun (s, n) -> s, int64 n)
     
-    Seq.map stringToMapping rawData[2..]
+let stringToMapping (s:string) = s.Split " -> " |> (fun s -> s[0], char s[1])
+        
+let changes = Seq.map stringToMapping rawData[2..]
 
 // ------------ domain funcs ------------------
 
 let toPairs = Seq.pairwise >> Seq.map (fun (l, r) -> charsToString [l; r])
 
 let collectAndSum<'a when 'a: equality> : seq<'a * int64> -> seq<'a * int64>=
-    Seq.groupBy fst
-    >> Seq.map (snd >> (Seq.reduce (fun (f, s) (_, s2) -> f, (s + s2))))
+    Seq.groupBy fst >> Seq.map (snd >> (Seq.reduce (fun (f, s) (_, s2) -> f, (s + s2))))
 
-let rec update2 change item =
+let rec update change item =
     let pair2, insert = Seq.head change
     let (pair:string), count = Seq.head item
     if pair = pair2 then
@@ -35,20 +31,21 @@ let rec update2 change item =
         [(firstpair, count); (secondpair, count)]
     else
         update2 (Seq.tail change) item
-          
-let rec recurser2 cycles polymerG =
-    if cycles = 0 then polymerG
+
+let updatePolymers =
+    Seq.map List.singleton
+    >> Seq.map (update changes)
+    >> Seq.concat
+    >> collectAndSum<string>
+    
+let rec recurser cycles polymers =
+    if cycles = 0 then polymers
     else
-        let newPolymerG =
-            Seq.map List.singleton polymerG
-            |> Seq.map (update2 changes)
-            |> Seq.concat
-            |> collectAndSum<string>
-            
-        recurser2 (cycles - 1) newPolymerG
+        let newPolymers = updatePolymers polymers
+        recurser2 (cycles - 1) newPolymers
 
 let solver n =
-    recurser2 n grouped
+    recurser n grouped
     |> Seq.map (fun (s, c) -> [(s[0], c); (s[1], c)])
     |> Seq.concat
     |> Seq.append [(leftmost, 1); (rightmost, 1)]
