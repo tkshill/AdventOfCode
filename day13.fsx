@@ -48,25 +48,25 @@ let rotate grid =
     let height, width = dimensions grid
     Array2D.init width height (fun row column -> grid[height - column - 1, row])
 
-let flip grid =
+let flipVertical grid =
     let height, width = dimensions grid
     Array2D.init height width (fun row column -> grid[height - row - 1, column])
 
 let midpoint grid = Array2D.length1 grid / 2
 
-let combine (grid:bool[,]) =
+let foldUp (grid:bool[,]) =
     let top = grid[..(midpoint grid - 1), *]
-    let bottom = flip (grid[(midpoint grid + 1).., *])
+    let flippedBottom = flipVertical (grid[(midpoint grid + 1).., *])
     let height, width = dimensions top
-    Array2D.init height width (fun row column -> top[row, column] || bottom[row, column])
+    Array2D.init height width (fun row column -> top[row, column] || flippedBottom[row, column])
 
-let folder grid = function
-    | Y -> combine grid
-    | X -> (rotate >> combine >> rotate >> rotate >> rotate) grid
+let foldPaper grid = function
+    | Y -> foldUp grid
+    | X -> (rotate >> foldUp >> rotate >> rotate >> rotate) grid
 
 // ----- part 1 ----
 let day13part1solution () =
-    Seq.fold folder dots (Seq.take 1 instructions)
+    Seq.fold foldPaper dots (Seq.take 1 instructions)
     |> Seq.cast<bool>
     |> Seq.sumBy (fun b -> if b then 1 else 0)
 
@@ -78,7 +78,7 @@ let toChar b = if b then "*" else "."
 
 let day13part2solution () =
     let result =
-        Seq.fold folder dots instructions
+        Seq.fold foldPaper dots instructions
         |> Array2D.map toChar
         
     for i in 0..((Array2D.length1 result) - 1) do
