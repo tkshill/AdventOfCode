@@ -22,7 +22,7 @@ let toPairs = Seq.pairwise >> Seq.map (fun (l, r) -> charsToString [l; r])
 let collectAndSum<'a when 'a: equality> : seq<'a * int64> -> seq<'a * int64>=
     Seq.groupBy fst >> Seq.map (snd >> (Seq.reduce (fun (f, s) (_, s2) -> f, (s + s2))))
 
-let rec update change item =
+let rec cycleChanges change item =
     let pair2, insert = Seq.head change
     let (pair:string), count = Seq.head item
     if pair = pair2 then
@@ -30,22 +30,22 @@ let rec update change item =
         let secondpair = [insert; pair[1]] |> charsToString 
         [(firstpair, count); (secondpair, count)]
     else
-        update2 (Seq.tail change) item
+        cycleChanges (Seq.tail change) item
 
 let updatePolymers =
     Seq.map List.singleton
-    >> Seq.map (update changes)
+    >> Seq.map (cycleChanges changes)
     >> Seq.concat
     >> collectAndSum<string>
     
-let rec recurser cycles polymers =
+let rec cyclePolymers cycles polymers =
     if cycles = 0 then polymers
     else
         let newPolymers = updatePolymers polymers
-        recurser2 (cycles - 1) newPolymers
+        cyclePolymers (cycles - 1) newPolymers
 
 let solver n =
-    recurser n grouped
+    cyclePolymers n grouped
     |> Seq.map (fun (s, c) -> [(s[0], c); (s[1], c)])
     |> Seq.concat
     |> Seq.append [(leftmost, 1); (rightmost, 1)]
