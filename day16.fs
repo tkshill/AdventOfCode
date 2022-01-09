@@ -4,9 +4,8 @@ module Day16 =
     
     // DOMAIN
    
-    type Packet = { Header: Header; Payload: Expr }
-    and Header = { Version: int; Type:int; }
-    and Expr = Literal of int64 | Operation of Packet seq
+    type Packet = { Version: int; Payload: Expr }
+    and Expr = Literal of int64 | Operation of int * Packet seq
     
     type Limit = CountLimit | LengthLimit
     
@@ -49,16 +48,17 @@ module Day16 =
 
         let version = intFromBase 2 $"{v1}{v2}{v3}"
         let type_ = intFromBase 2 $"{t1}{t2}{t3}"
-        let header = { Version = version; Type = type_ }
         
         match type_ with
         | LiteralType ->
             let literal, remainder = toLiteral rest
-            { Header = header; Payload = Literal literal }, remainder 
+            
+            { Version = version; Payload = Literal literal }, remainder
+            
         | OperationType ->
             let subPackets, remainder = toLimit (Seq.head rest) |> toSubPackets (Seq.tail rest)
             
-            { Header = header; Payload = Operation subPackets }, remainder
+            { Version = version; Payload = Operation (type_, subPackets) }, remainder
                 
     and limitToFunc = function | CountLimit -> tryPacketCount | LengthLimit -> tryPacketLength
     and toLimit = function | "1" -> CountLimit | _ -> LengthLimit
@@ -69,7 +69,7 @@ module Day16 =
         let total = intFromBase 2 limitBits
         let packetsRaw = Seq.unfold ((limitToFunc limitType) total) (0, rest)
         
-        Seq.map fst packetsRaw, (Seq.last >> snd) packetsRaw
+        (Seq.map fst packetsRaw), (Seq.last >> snd) packetsRaw
 
     and tryPacketCount total (completed, str) =
         if completed = total then None
@@ -86,16 +86,16 @@ module Day16 =
     
     // counts all versions in a packet and its subpackets
     let rec countVersions = function
-        | { Header = header; Payload = (Literal _) } -> header.Version
-        | { Header = header; Payload = (Operation packets) } -> header.Version + Seq.sumBy countVersions packets
+        | { Version = version; Payload = Literal _ } -> version
+        | { Version = version; Payload = Operation (_, packets) } -> version + Seq.sumBy countVersions packets
     
     // PART 2
     
     // collapses a packet into an integer based on the expressions for each operation
     let rec collapse = function
-        | { Payload = (Literal value) } -> value
-        | { Header = header; Payload = (Operation packets) } ->
-            match header.Type with
+        | { Payload = Literal value } -> value
+        | { Payload = Operation (type_, packets) } ->
+            match type_ with
             | 0 -> Seq.sumBy collapse packets
             | 1 -> (Seq.map collapse >> Seq.fold (*) 1L) packets
             | 2 -> collapse (Seq.minBy collapse packets) 
