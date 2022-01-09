@@ -99,9 +99,9 @@ module Day16 =
             | 1 -> (Seq.map collapse >> Seq.fold (*) 1L) packets
             | 2 -> collapse (Seq.minBy collapse packets) 
             | 3 -> collapse (Seq.maxBy collapse packets)
-            | 5 -> if collapse (Seq.head packets) > collapse (Seq.last packets) then 1L else 0L
-            | 6 -> if collapse (Seq.head packets) < collapse (Seq.last packets) then 1L else 0L
-            | 7 -> if collapse (Seq.head packets) = collapse (Seq.last packets) then 1L else 0L
+            | 5 -> if collapse packets[0] > collapse packets[1] then 1L else 0L
+            | 6 -> if collapse packets[0] < collapse packets[1] then 1L else 0L
+            | 7 -> if collapse packets[0] = collapse packets[1] then 1L else 0L
    
 module Day16test =
     
