@@ -23,15 +23,14 @@ module Day16 =
     let hexesToBinary str =
         let rec addZeroes s = if String.length s = 4 then s else addZeroes ("0" + s)
         
-        Seq.map (intFromBase 16 >> intToBase 2 >> addZeroes) str
-        |> String.concat ""
+        Seq.map (intFromBase 16 >> intToBase 2 >> addZeroes) str |> String.concat ""
     
     // transforms a string of bits to a number and remaining strings
     let toLiteral strings =
         let binaryChunk = function
-            | "1"::a::b::c::d::rest -> Some($"{a}{b}{c}{d}", rest)
-            | "0"::a::b::c::d::rest -> Some($"{a}{b}{c}{d}", "stop" :: rest)
-            | "stop"::rest -> Some( String.concat "" rest, List.empty)
+            | "1" :: a :: b :: c :: d :: rest -> Some( $"{a}{b}{c}{d}", rest )
+            | "0" :: a :: b :: c :: d :: rest -> Some( $"{a}{b}{c}{d}", "stop" :: rest )
+            | "stop" :: rest -> Some( String.concat "" rest, List.empty )
             | _ -> None
         
         let digits, remainder =
@@ -57,9 +56,7 @@ module Day16 =
             let literal, remainder = toLiteral rest
             { Header = header; Payload = Literal literal }, remainder 
         | OperationType ->
-            let subPackets, remainder =
-                toLimit (Seq.head rest)
-                |> toSubPackets (Seq.tail rest)
+            let subPackets, remainder = toLimit (Seq.head rest) |> toSubPackets (Seq.tail rest)
             
             { Header = header; Payload = Operation subPackets }, remainder
                 
