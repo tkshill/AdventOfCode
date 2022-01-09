@@ -114,11 +114,6 @@ module Day16test =
     open Day16
     
     [<Theory>]
-    [<InlineData(0, 1)>]
-    let ``One is not Zero`` (input, output) =
-        input |> should not' (equal output)
-    
-    [<Theory>]
     [<InlineData("EE00D40C823060", 14)>]
     [<InlineData("8A004A801A8002F478", 16)>]
     [<InlineData("620080001611562C8802118E34", 12)>]
