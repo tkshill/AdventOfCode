@@ -45,7 +45,7 @@ module Day16 =
     
     // converts a string of bits to a packet
     let rec toPacket str =
-        let v1::v2::v3::t1::t2::t3::rest = Seq.toList str |> List.map string
+        let v1 :: v2 :: v3 :: t1 :: t2 :: t3 :: rest = (Seq.toList >> List.map string) str
 
         let version = intFromBase 2 $"{v1}{v2}{v3}"
         let type_ = intFromBase 2 $"{t1}{t2}{t3}"
