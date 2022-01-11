@@ -1,8 +1,20 @@
 namespace Aoc2021.day17
 module Day17 =
     
+    open FParsec
+    open FParsec.Pipes
+    
     type Target = { MinX: int; MaxX: int; MinY: int; MaxY: int }
-
+    
+    let pTarget =
+        %%  "target area: x=" -- +.p<int> -- ".." -- +.p<int> -- ", y=" -- +.p<int> -- ".." -- +.p<int>
+        -|> fun x0 x y0 y -> { MinX = x0; MaxX = x; MinY = y0; MaxY = y }
+    
+    let toTarget str = 
+        match run pTarget str with 
+        | Success (target, _, _) -> target 
+        | _ -> failwith "you goofed."
+    
     let quad a b c =
         let D = b * b - 4.*a * c
         [(+);(-)] |> List.map (fun f -> (f -b (sqrt D))/2./a) |> Seq.head |> ceil |> int
@@ -11,9 +23,11 @@ module Day17 =
         let minX = quad 1 1 ((float -2) * (float x0))
         seq { for i in minX .. x do for j in y0 .. abs y0 -> (i, j) }
     
-    let tick (vx, vy) (x, y) = ((max (vx - 1) 0), vy - 1), (x + vx, y + vy)
+    let tick (xVelocity, yVelocity) (x, y) =
+        ((max (xVelocity - 1) 0), yVelocity - 1), (x + xVelocity, y + yVelocity)
     
-    let isPast { MaxX = x; MinY = y0; } (i, j) = i > x || j < y0
+    let isPast { MaxX = x; MinY = y0; } (i, j) =
+        i > x || j < y0
         
     let inTarget { MinX = x0; MaxX = x; MinY = y0; MaxY = y } (i, j) =
         i >= x0 && i <= x && j >= y0 && j <= y
@@ -117,4 +131,4 @@ module ``Day 17 Tests`` =
             
         [<Fact>]
         member x.``the part 2 solution is`` () =
-            day17part2solution trueTarget |> should equal 5523 
+            day17part2solution trueTarget |> should equal 5523
