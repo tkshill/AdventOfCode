@@ -17,9 +17,8 @@ module Day17 =
         | i, j when i > x || j < y0 -> true
         | _ -> false
         
-    let inTarget { MinX = x0; MaxX = x; MinY = y0; MaxY = y } = function
-        | i, j when i >= x0 && i <= x && j >= y0 && j <= y -> true
-        | _ -> false
+    let inTarget { MinX = x0; MaxX = x; MinY = y0; MaxY = y } (i, j) = 
+        i >= x0 && i <= x && j >= y0 && j <= y
     
     let advancePath target (velocity, position) =
         if isPast target position then None
