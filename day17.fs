@@ -13,11 +13,9 @@ module Day17 =
     
     let tick (vx, vy) (x, y) = ((max (vx - 1) 0), vy - 1), (x + vx, y + vy)
     
-    let isPast { MaxX = x; MinY = y0; } = function
-        | i, j when i > x || j < y0 -> true
-        | _ -> false
+    let isPast { MaxX = x; MinY = y0; } (i, j) = i > x || j < y0
         
-    let inTarget { MinX = x0; MaxX = x; MinY = y0; MaxY = y } (i, j) = 
+    let inTarget { MinX = x0; MaxX = x; MinY = y0; MaxY = y } (i, j) =
         i >= x0 && i <= x && j >= y0 && j <= y
     
     let advancePath target (velocity, position) =
