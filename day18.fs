@@ -31,7 +31,6 @@ module ``Day 18`` =
         
     let rec spelunk direction value = function
         | Lit n -> Lit (n + value)
-        
         | SFN n ->
             match direction with
             | Left -> SFN (spelunk direction value (fst n), snd n)
@@ -46,7 +45,6 @@ module ``Day 18`` =
                 
             else
                 let accrualLR, accrualRR, newRight = explode (depth + 1) v2
-                
                 0, accrualRR, SFN ( spelunk Right accrualLR v1, newRight )
                 
         | SFN (Lit n1, Lit n2) when depth = 4 -> n1, n2, Lit 0
@@ -55,7 +53,6 @@ module ``Day 18`` =
             
     let rec split = function
         | Lit n when n >= 10 -> SFN ( Lit (floor' n 2), Lit (ceil' n 2) )
-        
         | SFN (v1, v2) ->
             let v1' = split v1
             
