@@ -13,6 +13,8 @@ module ``Day 18`` =
     let floor_ x y = (float x / float y) |> floor |> int
     let ceil_ x y = (float x / float y) |> ceil |> int
     
+    let uncurry f (a, b) = f a b
+    
     let pSFnumber, pSFnumberRef = createParserForwardedToRef()
     
     let pSFvalue = (pint32 |>> Lit) <|> (pSFnumber |>> SFN)
@@ -26,85 +28,56 @@ module ``Day 18`` =
         | _ -> failwith "goofed"
     
     let rec sfToString = function
-        | Lit n, Lit n2 -> $"[{n},{n2}]"
-        | SFN n, SFN n2 -> $"[{sfToString n},{sfToString n2}]"
-        | Lit n, SFN n2 -> $"[{n},{sfToString n2}]"
-        | SFN n, Lit n2 -> $"[{sfToString n},{n2}]"
-
-    let combine n1 n2 = SFN n1, SFN n2
+        | Lit n2 -> string n2
+        | SFN (v1, v2) -> $"[{sfToString v1},{sfToString v2}]"
+    
+    let combine v1 v2 = SFN (v1, v2)
         
     let rec spelunk direction value = function
         | Lit n -> Lit (n + value)
+        
         | SFN n ->
             match direction with
             | Left -> SFN (spelunk direction value (fst n), snd n)
             | Right -> SFN (fst n, spelunk direction value (snd n))
-    
-    let rec explode depth = function 
-        | SFN sfNumberL, SFN sfNumberR when depth < 4 ->
-            let accrualLL, newLeft, accrualRL = explode (depth + 1) sfNumberL
+
+    let rec explode depth = function
+        | SFN (v1, v2) when depth < 4 ->
+            let accrualLL, accrualRL, newLeft = explode (depth + 1) v1
             
-            if newLeft <> sfNumberL then
-                accrualLL, ( SFN newLeft, spelunk Left accrualRL (SFN sfNumberR) ), 0
-            else
-                let accrualLR, newRight, accrualRR = explode (depth + 1) sfNumberR
-                0, ( spelunk Right accrualLR (SFN sfNumberL), SFN newRight ), accrualRR
+            if newLeft <> v1 then
+               
+               accrualLL, 0, SFN (newLeft, spelunk Left accrualRL v2)
                 
-        | SFN sfNumberL, sfValueR when depth < 4 ->
-            let accrualL, newLeft, accrualR = explode (depth + 1) sfNumberL
-            
-            accrualL, ( SFN newLeft, spelunk Left accrualR sfValueR ), 0
-            
-        | sfValueL, SFN sfNumberR when depth < 4 ->
-            let l', newRight, r' = explode (depth + 1) sfNumberR
-            
-            0, ( spelunk Right l' sfValueL, SFN newRight ), r'
-            
-        | SFN ( Lit numL, Lit numR ), sfValueR when depth = 4 ->
-            numL, ( Lit 0, spelunk Left numR sfValueR ), 0
-            
-        | sfValueL , SFN (Lit numL, Lit numR) when depth = 4 ->
-            0, ( spelunk Right numL sfValueL, Lit 0 ), numR
+            else
+                let accrualLR, accrualRR, newRight = explode (depth + 1) v2
+                
+                0, accrualRR, SFN ( spelunk Right accrualLR v1, newRight )
+                
+        | SFN (Lit n1, Lit n2) when depth = 4 -> n1, n2, Lit 0
         
-        | otherwise -> 0, otherwise, 0
+        | otherwise -> 0, 0, otherwise
             
     let rec split = function
-        | Lit numX, rightValue when numX >= 10 ->
-            SFN ( Lit (floor_ numX 2), Lit (ceil_ numX 2) ), rightValue
+        | Lit n when n >= 10 -> SFN ( Lit (floor_ n 2), Lit (ceil_ n 2) )
             
-        | Lit numX, Lit numY when numY >= 10 ->
-            Lit numX, SFN ( Lit (floor_ numY 2), Lit (ceil_ numY 2) )
+        | SFN (v1, v2) ->
+            let v1' = split v1
             
-        | Lit numX, SFN rightNumber ->
-            Lit numX, SFN (split rightNumber)
-            
-        | SFN leftSFnumber, rightValue ->
-            let newLeft = split leftSFnumber
-            
-            if newLeft <> leftSFnumber then
-                SFN newLeft, rightValue
+            if v1' <> v1 then SFN (v1', v2)
                 
-            else
-                match rightValue with
-                | Lit numY when numY >= 10 ->
-                    SFN leftSFnumber, SFN (Lit (floor_ numY 2), Lit (ceil_ numY 2) )
-                    
-                | SFN rightNumber ->
-                    SFN leftSFnumber, SFN (split rightNumber)
-                    
-                | _ ->
-                    SFN leftSFnumber, rightValue
-                    
+            else SFN (v1, split v2)
+                
         | otherwise -> otherwise
-                    
+            
     let rec reduce sfNumber0 =
-        let _, sfNumber1, _ = explode 1 sfNumber0
-        
+        let _, _, sfNumber1 = explode 0 sfNumber0
         if sfNumber1 = sfNumber0 then
             let sfNumber2 = split sfNumber1
-            
-            if sfNumber2 = sfNumber1 then sfNumber2
-            else reduce sfNumber2
+            if sfNumber2 = sfNumber1 then
+                sfNumber2
+            else
+                reduce sfNumber2
         else
             reduce sfNumber1
             
@@ -116,12 +89,13 @@ module ``Day 18`` =
         
     let day18part1solution =
         File.ReadAllLines
-        >> Seq.map toSFnumber
+        >> Seq.map (toSFnumber >> SFN)
         >> Seq.reduce (fun n1 n2 -> combine n1 n2 |> reduce)
-        >> magnitude
+        >> function | SFN v' -> magnitude v' | _ -> failwith "not a number"
         
     // part 2
     
+    // Thanks to Thomas Patriczek for this implementation of combinations
     let rec combinations acc size set = seq {
         match size, set with
         | n, x::xs ->
@@ -137,10 +111,10 @@ module ``Day 18`` =
         
     let day18part2solution =
         File.ReadAllLines
-        >> Seq.map toSFnumber
+        >> Seq.map (toSFnumber >> SFN)
         >> Seq.toList
         >> uniquePairs
-        >> Seq.map (fun (n1, n2) -> combine n1 n2 |> reduce |> magnitude)
+        >> Seq.map ((uncurry combine) >> reduce >> function | SFN v' -> magnitude v' | _ -> failwith "not a number")
         >> Seq.max
         
     
@@ -151,12 +125,6 @@ module ``Day 18 Tests`` =
     open ``Day 18``
     
     type ``Part 1 tests`` () =
-             
-        let rec explode_ (sfNumber0: SnailFishNumber) =
-          let _, sfNumber1, _ = explode 1 sfNumber0
-        
-          if sfNumber1 = sfNumber0 then sfNumber1
-          else explode_ sfNumber1
         
         [<Fact>]
         member x.``strings can successfully be converted to SnailFish Numbers`` () =
@@ -169,25 +137,9 @@ module ``Day 18 Tests`` =
         
         [<Fact>]
         member x.``toString works correctly`` () =
-            sfToString ( Lit 1, Lit 2 )
+            sfToString <| SFN ( Lit 1, Lit 2 )
                 |> should equal "[1,2]"
-            sfToString ( Lit 9, SFN ( Lit 8, Lit 7 ) )
+            sfToString <| SFN ( Lit 9, SFN ( Lit 8, Lit 7 ) )
                 |> should equal "[9,[8,7]]"
-            sfToString ( SFN ( Lit 1, Lit 9 ), SFN ( Lit 8, Lit 5 ) )
+            sfToString <| SFN ( SFN ( Lit 1, Lit 9 ), SFN ( Lit 8, Lit 5 ) )
                 |> should equal "[[1,9],[8,5]]"
-                
-        [<Fact>]
-        member x.``Snail Fish Numbers can be successfully combined`` () =
-            combine (toSFnumber "[1,2]") (toSFnumber "[[3,4],5]")
-                |> should equal (toSFnumber "[[1,2],[[3,4],5]]")
-            combine (toSFnumber "[9,[8,7]]") (toSFnumber "[[1,9],[8,5]]")
-                |> should equal (toSFnumber "[[9,[8,7]],[[1,9],[8,5]]]")
-            
-        [<Theory>]
-        [<InlineData("[[[[[9,8],1],2],3],4]", "[[[[0,9],2],3],4]")>]
-//        [<InlineData("[7,[6,[5,[4,[3,2]]]]]", "[7,[6,[5,[7,0]]]]")>]
-//        [<InlineData("[[6,[5,[4,[3,2]]]],1]", "[[6,[5,[7,0]]],3]")>]
-//        [<InlineData("[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]", "[[3,[2,[8,0]]],[9,[5,[7,0]]]]")>]
-        member x.``EXPLOSIONS test`` (input, expected) =
-            input (toSFnumber >> explode_) |> should equal (toSFnumber expected)
- 
