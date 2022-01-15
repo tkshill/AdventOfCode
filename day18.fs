@@ -10,10 +10,8 @@ module ``Day 18`` =
     
     type Direction = Left | Right
     
-    let floor_ x y = (float x / float y) |> floor |> int
-    let ceil_ x y = (float x / float y) |> ceil |> int
-    
-    let uncurry f (a, b) = f a b
+    let floor' x y = (float x / float y) |> floor |> int
+    let ceil' x y = (float x / float y) |> ceil |> int
     
     let pSFnumber, pSFnumberRef = createParserForwardedToRef()
     
@@ -30,8 +28,6 @@ module ``Day 18`` =
     let rec sfToString = function
         | Lit n2 -> string n2
         | SFN (v1, v2) -> $"[{sfToString v1},{sfToString v2}]"
-    
-    let combine v1 v2 = SFN (v1, v2)
         
     let rec spelunk direction value = function
         | Lit n -> Lit (n + value)
@@ -46,7 +42,6 @@ module ``Day 18`` =
             let accrualLL, accrualRL, newLeft = explode (depth + 1) v1
             
             if newLeft <> v1 then
-               
                accrualLL, 0, SFN (newLeft, spelunk Left accrualRL v2)
                 
             else
@@ -59,8 +54,8 @@ module ``Day 18`` =
         | otherwise -> 0, 0, otherwise
             
     let rec split = function
-        | Lit n when n >= 10 -> SFN ( Lit (floor_ n 2), Lit (ceil_ n 2) )
-            
+        | Lit n when n >= 10 -> SFN ( Lit (floor' n 2), Lit (ceil' n 2) )
+        
         | SFN (v1, v2) ->
             let v1' = split v1
             
@@ -90,7 +85,7 @@ module ``Day 18`` =
     let day18part1solution =
         File.ReadAllLines
         >> Seq.map (toSFnumber >> SFN)
-        >> Seq.reduce (fun n1 n2 -> combine n1 n2 |> reduce)
+        >> Seq.reduce (fun n1 n2 -> SFN (n1, n2) |> reduce)
         >> function | SFN v' -> magnitude v' | _ -> failwith "not a number"
         
     // part 2
@@ -114,7 +109,7 @@ module ``Day 18`` =
         >> Seq.map (toSFnumber >> SFN)
         >> Seq.toList
         >> uniquePairs
-        >> Seq.map ((uncurry combine) >> reduce >> function | SFN v' -> magnitude v' | _ -> failwith "not a number")
+        >> Seq.map (SFN >> reduce >> function | SFN v' -> magnitude v' | _ -> failwith "not a number")
         >> Seq.max
         
     
