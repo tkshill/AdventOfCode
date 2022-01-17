@@ -4,6 +4,8 @@ module ``Day 18`` =
     open System.IO
     open FParsec
     open FParsec.Pipes
+    
+    let curry f a b = f (a, b)
 
     type SnailFishNumber = SnailFishValue * SnailFishValue
     and SnailFishValue = Lit of int | SFN of SnailFishNumber
@@ -18,23 +20,35 @@ module ``Day 18`` =
     let pSFvalue = (pint32 |>> Lit) <|> (pSFnumber |>> SFN)
     
     do pSFnumberRef :=
-        %% "[" -- +.pSFvalue -- "," -- +.pSFvalue -- "]" -|> fun a b -> a, b
+        %% "[" -- +.pSFvalue -- "," -- +.pSFvalue -- "]"
+        -|> fun a b -> a, b
     
     let toSFnumber str =
         match run pSFnumber str with
-        | Success (sfNumber, _, _) -> sfNumber
-        | _ -> failwith "goofed"
+        | Success (sfNumber, _, _) ->
+            sfNumber
+            
+        | _ ->
+            failwith "goofed"
     
     let rec sfToString = function
-        | Lit n2 -> string n2
-        | SFN (v1, v2) -> $"[{sfToString v1},{sfToString v2}]"
+        | Lit n2 ->
+            string n2
+            
+        | SFN (v1, v2) ->
+            $"[{sfToString v1},{sfToString v2}]"
         
     let rec spelunk direction value = function
-        | Lit n -> Lit (n + value)
-        | SFN n ->
+        | Lit n ->
+            Lit (n + value)
+            
+        | SFN (v1, v2) ->
             match direction with
-            | Left -> SFN (spelunk direction value (fst n), snd n)
-            | Right -> SFN (fst n, spelunk direction value (snd n))
+            | Left ->
+                SFN (spelunk direction value v1, v2)
+                
+            | Right ->
+                SFN (v1, spelunk direction value v2)
 
     let rec explode depth = function
         | SFN (v1, v2) when depth < 4 ->
@@ -47,45 +61,57 @@ module ``Day 18`` =
                 let accrualLR, accrualRR, newRight = explode (depth + 1) v2
                 0, accrualRR, SFN ( spelunk Right accrualLR v1, newRight )
                 
-        | SFN (Lit n1, Lit n2) when depth = 4 -> n1, n2, Lit 0
+        | SFN (Lit n1, Lit n2) when depth = 4 ->
+            n1, n2, Lit 0
         
-        | otherwise -> 0, 0, otherwise
+        | otherwise ->
+            0, 0, otherwise
             
     let rec split = function
-        | Lit n when n >= 10 -> SFN ( Lit (floor' n 2), Lit (ceil' n 2) )
+        | Lit n when n >= 10 ->
+            SFN ( Lit (floor' n 2), Lit (ceil' n 2) )
+        
         | SFN (v1, v2) ->
             let v1' = split v1
             
             if v1' <> v1 then SFN (v1', v2)
-                
             else SFN (v1, split v2)
                 
         | otherwise -> otherwise
             
-    let rec reduce sfNumber0 =
-        let _, _, sfNumber1 = explode 0 sfNumber0
-        if sfNumber1 = sfNumber0 then
-            let sfNumber2 = split sfNumber1
-            if sfNumber2 = sfNumber1 then
-                sfNumber2
+    let rec reduce sfValue =
+        let _, _, sfValue2 = explode 0 sfValue
+        if sfValue2 = sfValue then
+            let sfValue3 = split sfValue2
+            
+            if sfValue3 = sfValue2 then
+                sfValue3
             else
-                reduce sfNumber2
+                reduce sfValue3
+                
         else
-            reduce sfNumber1
+            reduce sfValue2
             
     let rec magnitude = function
-        | Lit n1, Lit n2 -> (3 * n1) + (2 * n2)
-        | Lit n1, SFN rightValue -> (3 * n1) + (2 * magnitude rightValue)
-        | SFN leftValue, Lit n2 -> (3 * magnitude leftValue) + (2 * n2)
-        | SFN leftValue, SFN rightValue -> (3 * magnitude leftValue) + (2 * magnitude rightValue)
+        | Lit n1, Lit n2 ->
+            (3 * n1) + (2 * n2)
+            
+        | Lit n1, SFN rightValue ->
+            (3 * n1) + (2 * magnitude rightValue)
+            
+        | SFN leftValue, Lit n2 ->
+            (3 * magnitude leftValue) + (2 * n2)
+            
+        | SFN leftValue, SFN rightValue ->
+            (3 * magnitude leftValue) + (2 * magnitude rightValue)
         
     let day18part1solution =
         File.ReadAllLines
         >> Seq.map (toSFnumber >> SFN)
-        >> Seq.reduce (fun n1 n2 -> SFN (n1, n2) |> reduce)
-        >> function | SFN v' -> magnitude v' | _ -> failwith "not a number"
+        >> Seq.reduce ((curry SFN) >> reduce)
+        >> function | SFN num -> magnitude num | _ -> failwith "not a number"
         
-    // part 2
+    // Part 2
     
     // Thanks to Thomas Patriczek for this implementation of combinations
     let rec combinations acc size set = seq {
@@ -98,15 +124,15 @@ module ``Day 18`` =
     } 
     
     let uniquePairs =
-        combinations [] 2
-        >> Seq.collect (fun n -> [(Seq.head n, Seq.last n); (Seq.last n, Seq.head n)])
+        let pairs n = [(Seq.head n, Seq.last n); (Seq.last n, Seq.head n)]
+        combinations [] 2 >> Seq.collect pairs
         
     let day18part2solution =
         File.ReadAllLines
         >> Seq.map (toSFnumber >> SFN)
         >> Seq.toList
         >> uniquePairs
-        >> Seq.map (SFN >> reduce >> function | SFN v' -> magnitude v' | _ -> failwith "not a number")
+        >> Seq.map (SFN >> reduce >> function | SFN num -> magnitude num | _ -> failwith "not a number")
         >> Seq.max
         
     
