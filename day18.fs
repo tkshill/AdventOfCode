@@ -4,8 +4,6 @@ module ``Day 18`` =
     open System.IO
     open FParsec
     open FParsec.Pipes
-    
-    let curry f a b = f (a, b)
 
     type SnailFishNumber = SnailFishValue * SnailFishValue
     and SnailFishValue = Lit of int | SFN of SnailFishNumber
@@ -108,7 +106,7 @@ module ``Day 18`` =
     let day18part1solution =
         File.ReadAllLines
         >> Seq.map (toSFnumber >> SFN)
-        >> Seq.reduce ((curry SFN) >> reduce)
+        >> Seq.reduce (fun a b -> SFN (a, b) |> reduce)
         >> function | SFN num -> magnitude num | _ -> failwith "not a number"
         
     // Part 2
@@ -134,7 +132,6 @@ module ``Day 18`` =
         >> uniquePairs
         >> Seq.map (SFN >> reduce >> function | SFN num -> magnitude num | _ -> failwith "not a number")
         >> Seq.max
-        
     
 module ``Day 18 Tests`` =
     
