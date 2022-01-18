@@ -94,14 +94,14 @@ module ``Day 18`` =
         | Lit n1, Lit n2 ->
             (3 * n1) + (2 * n2)
             
-        | Lit n1, SFN rightValue ->
-            (3 * n1) + (2 * magnitude rightValue)
+        | Lit n1, SFN sfNum ->
+            (3 * n1) + (2 * magnitude sfNum)
             
-        | SFN leftValue, Lit n2 ->
-            (3 * magnitude leftValue) + (2 * n2)
+        | SFN sfNum, Lit n2 ->
+            (3 * magnitude sfNum) + (2 * n2)
             
-        | SFN leftValue, SFN rightValue ->
-            (3 * magnitude leftValue) + (2 * magnitude rightValue)
+        | SFN leftNum, SFN rightNum ->
+            (3 * magnitude leftNum) + (2 * magnitude rightNum)
         
     let day18part1solution =
         File.ReadAllLines
