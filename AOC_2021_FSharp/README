@@ -5,4 +5,6 @@ My attempt at the [advent of code challenge](https://adventofcode.com/2021) for 
 All the code samples here are done in [F#](https://fsharp.org/), and ran using either as part of a standard .NET 6 console application (build not included) or in self contained [.NET interactive notebooks.](https://github.com/dotnet/interactive#notebooks-with-net)
 
 
-Key themes include the use of FParsec, as well as the FUnit and XUnit test frameworks
+Key themes include the use of [FParsec](http://www.quanttec.com/fparsec/), the F# recursive descent parser as well as the [FUnit and XUnit](https://docs.microsoft.com/en-us/dotnet/core/testing/unit-testing-fsharp-with-dotnet-test) test frameworks
+
+This was mainly a chance to practice functional programming techniques, especially text parsing, and efficient algorithms.
