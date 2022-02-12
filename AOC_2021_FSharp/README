@@ -1,0 +1,8 @@
+# Advent of Code 2021
+
+My attempt at the [advent of code challenge](https://adventofcode.com/2021) for the year 2021.
+
+All the code samples here are done in [F#](https://fsharp.org/), and ran using either as part of a standard .NET 6 console application (build not included) or in self contained [.NET interactive notebooks.](https://github.com/dotnet/interactive#notebooks-with-net)
+
+
+Key themes include the use of FParsec, as well as the FUnit and XUnit test frameworks
